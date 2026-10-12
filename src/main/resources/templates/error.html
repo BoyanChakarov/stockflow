@@ -12,8 +12,13 @@
         <p class="eyebrow">STOCKFLOW</p>
         <h1 th:text="${problem.title}">Request could not be completed</h1>
         <p th:text="${problem.detail}"></p>
-        <p class="muted small">Request ID: <span th:text="${problem.requestId}"></span></p>
-        <p class="muted">Use your browser’s Back button to keep your filters, or return to the overview.</p>
+        <p class="muted small">
+          Request ID: <span th:text="${problem.requestId}"></span>
+        </p>
+        <p class="muted">
+          Use your browser’s Back button to keep your filters, or return to the
+          overview.
+        </p>
         <a class="button" href="/">Back to overview</a>
       </section>
     </main>

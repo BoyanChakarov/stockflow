@@ -42,7 +42,7 @@ Product/customer/movement filtering and pagination happen in PostgreSQL. Order l
 
 Dashboard reads use a read-only REPEATABLE READ transaction. Low stock includes only active products whose available units are at or below the threshold, ordered by availability/SKU/ID, limited to ten.
 
-Session cookies are HttpOnly and SameSite=Lax; `prod` adds Secure. CSRF remains enabled on all unsafe methods, including login/logout. API authentication and access errors share the ProblemDetail-style schema with controller errors. Request IDs are generated server-side, returned in headers, and added to logs. No request-body, cookie or password logging is enabled. Authority checks run in both HTTP routing and application services.
+Session cookies are HttpOnly and SameSite=Lax; `prod` adds Secure. CSRF remains enabled on all unsafe methods, including login/logout. API authentication and access errors share the ProblemDetail-style schema with controller errors. Request IDs are generated server-side, returned in headers, and included as MDC fields in ECS JSON logs. No request-body, cookie or password logging is enabled. Authority checks run in both HTTP routing and application services.
 
 ## UI retry behavior
 

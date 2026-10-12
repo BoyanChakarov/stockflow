@@ -40,5 +40,6 @@ management:
     health:
       show-details: never
 logging:
-  pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS,UTC}Z %level [%X{requestId:-}] %logger{36} - %msg%n'
+  structured:
+    format:
+      console: ecs
