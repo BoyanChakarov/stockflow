@@ -848,6 +848,8 @@ label small {
 }
 .timeline small {
   font-size: 10px;
+  display: block;
+  margin-top: 6px;
 }
 .login-page {
   display: flex;
