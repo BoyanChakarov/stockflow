@@ -1,0 +1,4 @@
+stockflow:
+  demo:
+    admin-password: ${STOCKFLOW_ADMIN_PASSWORD}
+    staff-password: ${STOCKFLOW_STAFF_PASSWORD}
