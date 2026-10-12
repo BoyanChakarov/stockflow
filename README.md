@@ -1,12 +1,57 @@
-# StockFlow
+# StockFlow · Java Inventory & Order Management
 
 [![Verify StockFlow](https://github.com/BoyanChakarov/stockflow/actions/workflows/ci.yml/badge.svg)](https://github.com/BoyanChakarov/stockflow/actions/workflows/ci.yml)
 
-Inventory and order management for a small internal team. Receive stock, reserve it for an order, and fulfil or cancel that order with a consistent movement history. One warehouse, whole units, EUR quoted totals.
+**Java backend portfolio project by [Boyan Chakarov](https://github.com/BoyanChakarov)**
 
-![StockFlow overview](docs/screenshots/dashboard.png)
+StockFlow manages products, customers, inventory, and orders for a small internal team. Its central engineering problem is keeping stock correct when users place competing orders, retry requests, or fulfil and cancel the same order concurrently.
 
-Built as a Java engineering portfolio project: database transactions, deterministic row locking, frozen order snapshots, session security, persistent idempotency, and real PostgreSQL concurrency tests. Demo records are synthetic.
+Built with **Java 21, Spring Boot, Spring Security, Spring Data JPA, and PostgreSQL**, with a working Thymeleaf interface and a reproducible Docker demo. One warehouse, whole units, EUR quoted totals; all demonstration records are synthetic.
+
+[Run locally](#quick-start) · [Demo walkthrough](docs/demo.md) · [Architecture](docs/architecture.md) · [Verified release](https://github.com/BoyanChakarov/stockflow/releases/tag/v1.0.0) · [CV wording](docs/portfolio.md)
+
+## Engineering highlights
+
+- **Transactional order processing:** reservations, order snapshots, stock movements, and events commit together. A shortage on any line rolls back the entire order.
+- **Concurrency control:** PostgreSQL row locks are acquired in a consistent product order. Tests exercise competing last-unit orders and fulfil/cancel races using separate database connections.
+- **Persistent request deduplication:** an actor-scoped idempotency key and normalized payload hash identify retries. The original successful response commits with the business changes and remains replayable after an application restart.
+- **Security and validation:** session authentication, BCrypt passwords, ADMIN/STAFF authorization, CSRF protection, validated DTOs, and consistent API errors with request IDs.
+- **Repeatable delivery:** Flyway migrations, container builds, PostgreSQL integration tests, browser acceptance, and restart checks run in GitHub Actions.
+
+## Verified results
+
+Results for [v1.0.0](https://github.com/BoyanChakarov/stockflow/releases/tag/v1.0.0), commit `2657dd2`, from its [successful CI run](https://github.com/BoyanChakarov/stockflow/actions/runs/38237970588):
+
+| Check | Result |
+| --- | --- |
+| JUnit tests | **38 passed**: 6 unit + 32 PostgreSQL integration; none skipped |
+| Java line coverage | **82.5%**: 924 of 1,120 lines, measured by JaCoCo |
+| Docker Compose | Image build and healthy startup against an empty database passed |
+| Chromium workflow | Role permissions, order lifecycle, lost-response retry, and mobile layout passed |
+| Persistence | API smoke and application restart checks passed |
+
+Coverage measures the Java code exercised by JUnit; browser checks are a separate acceptance gate. [Full verification record](docs/verification.md).
+
+![StockFlow dashboard showing stock availability and confirmed orders](docs/screenshots/dashboard.png)
+
+## Review the Java implementation
+
+| Area | Start here | What to look for |
+| --- | --- | --- |
+| Domain and transactions | [OrderService](src/main/java/com/boyanchakarov/stockflow/order/OrderService.java), [Product](src/main/java/com/boyanchakarov/stockflow/catalog/Product.java) | Atomic reservation, immutable order snapshots, stock invariants, terminal transitions |
+| Retry handling | [Idempotency](src/main/java/com/boyanchakarov/stockflow/common/Idempotency.java), [WriteTransactions](src/main/java/com/boyanchakarov/stockflow/common/WriteTransactions.java) | Unique database claim, payload fingerprint, stored response, bounded lock waits |
+| Relational design | [Flyway migrations](src/main/resources/db/migration), [OrderQueries](src/main/java/com/boyanchakarov/stockflow/order/OrderQueries.java) | Constraints, indexes, parameterized queries, pagination, summary projections |
+| Application security | [SecurityConfig](src/main/java/com/boyanchakarov/stockflow/auth/SecurityConfig.java), [OpenAPI contract](docs/openapi.yaml) | Session/CSRF configuration, role boundaries, documented request and response models |
+| Failure and race testing | [StockFlowIT](src/test/java/com/boyanchakarov/stockflow/StockFlowIT.java), [acceptance map](docs/testing.md) | Concurrent transactions, rollback after flush, ledger reconciliation, HTTP authorization |
+
+The application is a **single Spring Boot service organized by business feature**. Controllers exchange DTOs; application services own use cases; JPA and JDBC share PostgreSQL transactions. Flyway owns the schema, Hibernate validates it, and Open Session in View is disabled. See the [architecture](docs/architecture.md) and [design decisions](docs/decisions).
+
+### Design tradeoffs
+
+- **One service and one database** keep multi-product reservations inside a single transaction. Distributed deployment is outside this project's scope.
+- **Pessimistic row locking** makes stock checks and updates atomic. Consistent lock ordering reduces deadlock risk; bounded waits produce a retryable API error under contention.
+- **Same-origin sessions and Thymeleaf** fit an internal tool and keep authentication and deployment compact. Sessions are local to one application instance.
+- **JPA plus targeted JDBC queries** combine aggregate persistence with explicit idempotency SQL and efficient order summaries. Throughput has not been benchmarked.
 
 ## Quick start
 
@@ -74,6 +119,7 @@ Maven does not automatically load `.env`; Docker Compose does. In PowerShell use
 
 ## Explore
 
+- [Project summary, CV bullets, and interview talking points](docs/portfolio.md)
 - [Seven-stage implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Scope and original implementation specification](docs/MVP_SCOPE.md)
 - [Architecture and transaction boundaries](docs/architecture.md)

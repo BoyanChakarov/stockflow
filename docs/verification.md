@@ -8,9 +8,9 @@ Recorded during implementation on 12 October 2026. The source release and its ex
 - OpenAPI 3.1 validated with openapi-spec-validator 0.7.2.
 - Default Testcontainers verification, container build, fresh Compose workflow, browser acceptance and process-restart persistence are release gates in GitHub Actions.
 
-## Executed release-candidate evidence
+## Verified v1.0.0 release
 
-[Successful full Actions run](https://github.com/BoyanChakarov/stockflow/actions/runs/38237504562) on commit `6dec7f82c4cc67d3355145bbf638bd39884360f2`:
+[Successful full Actions run](https://github.com/BoyanChakarov/stockflow/actions/runs/38237970588) on release commit `2657dd2acbd41913ba3a9a374a93a7e397a42b23`, published as [v1.0.0](https://github.com/BoyanChakarov/stockflow/releases/tag/v1.0.0):
 
 | Check | Result |
 | --- | --- |
@@ -28,6 +28,6 @@ Recorded during implementation on 12 October 2026. The source release and its ex
 
 Reports are available in that run's `verification-reports`, `browser-evidence`, and `stockflow-application` artifacts. Coverage describes Java exercised by JUnit; browser execution is a separate acceptance gate.
 
-The release notes identify the final release commit and its own successful Actions run. The final documentation/log-format commit must pass these same gates before `v1.0.0` is created. No failed run is presented as release evidence.
+The release notes identify this exact source commit and successful Actions run. The release includes the CI-built executable JAR, source archive, and SHA-256 checksums. Later portfolio documentation updates do not change the tagged release or these measurements.
 
 No hosted internet application, production data, users, uptime or throughput claims are included.
