@@ -47,7 +47,8 @@ public class OrderController {
   }
 
   @PostMapping("/{id}/fulfil")
-  public OrderDtos.Detail fulfil(@PathVariable UUID id, @RequestBody(required = false) EmptyCommand command) {
+  public OrderDtos.Detail fulfil(
+      @PathVariable UUID id, @RequestBody(required = false) EmptyCommand command) {
     return service.fulfil(id);
   }
 

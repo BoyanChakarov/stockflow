@@ -1,0 +1,2179 @@
+openapi: 3.1.0
+info:
+  title: StockFlow API
+  version: 1.0.0
+  description: One warehouse, whole-unit inventory, EUR quoted totals. Session cookies
+    and CSRF protect same-origin browser/API access. All monetary responses use two-decimal
+    strings; all timestamps are UTC. Unknown request fields are rejected.
+  license:
+    name: MIT
+    identifier: MIT
+servers:
+- url: http://localhost:8080
+security:
+- session: []
+paths:
+  /api/v1/csrf:
+    get:
+      summary: Obtain the session CSRF token
+      operationId: getApiV1Csrf
+      tags:
+      - csrf
+      description: 'Permission: Public. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Csrf'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters: []
+      security: []
+  /api/v1/me:
+    get:
+      summary: Current actor
+      operationId: getApiV1Me
+      tags:
+      - me
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actor'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters: []
+  /api/v1/products:
+    get:
+      summary: Search products
+      operationId: getApiV1Products
+      tags:
+      - products
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - &id002
+        name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          default: 0
+      - &id003
+        name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: Trimmed case-insensitive substring search; SQL wildcard characters
+          are treated literally.
+        schema:
+          type: string
+          maxLength: 100
+      - name: active
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: boolean
+      - name: sort
+        in: query
+        required: false
+        description: 'Allowed fields: sku, name, createdAt, unitPrice. Optional ,asc
+          or ,desc; ID is the tiebreaker. Default sku.'
+        schema:
+          type: string
+    post:
+      summary: Create product
+      operationId: postApiV1Products
+      tags:
+      - products
+      description: 'Permission: ADMIN. '
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          headers:
+            Location:
+              schema:
+                type: string
+              description: API URI of the created resource; identical on replay.
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProduct'
+  /api/v1/products/{id}:
+    get:
+      summary: Product details
+      operationId: getApiV1ProductsId
+      tags:
+      - products
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: &id001
+          type: string
+          format: uuid
+    patch:
+      summary: Edit product
+      operationId: patchApiV1ProductsId
+      tags:
+      - products
+      description: 'Permission: ADMIN. Absent fields preserve existing values; null
+        clears optional text and is invalid for required fields. Empty patches are
+        rejected. SKU, stock, actor, and timestamps are immutable.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPatch'
+  /api/v1/customers:
+    get:
+      summary: Search customers
+      operationId: getApiV1Customers
+      tags:
+      - customers
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPage'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - *id002
+      - *id003
+      - name: q
+        in: query
+        required: false
+        description: Trimmed case-insensitive substring search; SQL wildcard characters
+          are treated literally.
+        schema:
+          type: string
+          maxLength: 100
+      - name: active
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: boolean
+      - name: sort
+        in: query
+        required: false
+        description: 'Allowed fields: name, createdAt. Optional ,asc or ,desc; ID
+          is the tiebreaker. Default name.'
+        schema:
+          type: string
+    post:
+      summary: Create customer
+      operationId: postApiV1Customers
+      tags:
+      - customers
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          headers:
+            Location:
+              schema:
+                type: string
+              description: API URI of the created resource; identical on replay.
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomer'
+  /api/v1/customers/{id}:
+    get:
+      summary: Customer details
+      operationId: getApiV1CustomersId
+      tags:
+      - customers
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+    patch:
+      summary: Edit customer
+      operationId: patchApiV1CustomersId
+      tags:
+      - customers
+      description: 'Permission: STAFF or ADMIN; active requires ADMIN. Absent fields
+        preserve existing values; null clears optional text and is invalid for required
+        fields. Empty patches are rejected. SKU, stock, actor, and timestamps are
+        immutable.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerPatch'
+  /api/v1/inventory/receipts:
+    post:
+      summary: Receive stock
+      operationId: postApiV1InventoryReceipts
+      tags:
+      - inventory
+      description: 'Permission: ADMIN. '
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: Unique per actor and operation. Retain across uncertain retries;
+          persisted for the life of the dataset.
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Receipt'
+  /api/v1/inventory/adjustments:
+    post:
+      summary: Correct stock
+      operationId: postApiV1InventoryAdjustments
+      tags:
+      - inventory
+      description: 'Permission: ADMIN. '
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movement'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: Unique per actor and operation. Retain across uncertain retries;
+          persisted for the life of the dataset.
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Adjustment'
+  /api/v1/inventory/movements:
+    get:
+      summary: Movement history
+      operationId: getApiV1InventoryMovements
+      tags:
+      - inventory
+      description: 'Permission: ADMIN. Newest createdAt first, then ID. History has
+        no update/delete operation.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementPage'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - *id002
+      - *id003
+      - &id005
+        name: from
+        in: query
+        required: false
+        description: Inclusive UTC ISO-8601 start.
+        schema: &id004
+          type: string
+          format: date-time
+      - &id006
+        name: to
+        in: query
+        required: false
+        description: Exclusive UTC ISO-8601 end. Must be after from.
+        schema: *id004
+      - name: productId
+        in: query
+        required: false
+        description: ''
+        schema: *id001
+      - name: type
+        in: query
+        required: false
+        description: ''
+        schema: &id010
+          type: string
+          enum:
+          - RECEIPT
+          - ADJUSTMENT
+          - RESERVE
+          - FULFIL
+          - RELEASE
+  /api/v1/orders:
+    post:
+      summary: Confirm an order and reserve every line
+      operationId: postApiV1Orders
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. All lines commit or roll back together.
+        Replay returns the original CONFIRMED creation snapshot even after fulfilment
+        or archival. GET details returns current state. Server calculates all prices
+        and totals.'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          headers:
+            Location:
+              schema:
+                type: string
+              description: API URI of the created resource; identical on replay.
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: Unique per actor and operation. Retain across uncertain retries;
+          persisted for the life of the dataset.
+        schema: *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrder'
+    get:
+      summary: Search order summaries
+      operationId: getApiV1Orders
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummaryPage'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - *id002
+      - *id003
+      - *id005
+      - *id006
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema: &id011
+          type: string
+          enum:
+          - CONFIRMED
+          - FULFILLED
+          - CANCELLED
+      - name: customerId
+        in: query
+        required: false
+        description: ''
+        schema: *id001
+      - name: sort
+        in: query
+        required: false
+        description: createdAt, total or status; optional ,asc or ,desc. Default createdAt,desc;
+          ID ascending tiebreaker.
+        schema:
+          type: string
+  /api/v1/orders/{id}:
+    get:
+      summary: Current order with frozen line and customer values
+      operationId: getApiV1OrdersId
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+  /api/v1/orders/{id}/fulfil:
+    post:
+      summary: Fulfil all lines
+      operationId: postApiV1OrdersIdFulfil
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. Repeated fulfil returns current FULFILLED
+        order without another movement/event. Cancelling a fulfilled order conflicts.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmptyCommand'
+  /api/v1/orders/{id}/cancel:
+    post:
+      summary: Cancel and release all reservations
+      operationId: postApiV1OrdersIdCancel
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. Repeated cancel preserves the original
+        reason and creates no additional history. Fulfilling a cancelled order conflicts.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: Token from GET /api/v1/csrf; refresh after login.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cancel'
+  /api/v1/orders/{id}/events:
+    get:
+      summary: Immutable order transitions
+      operationId: getApiV1OrdersIdEvents
+      tags:
+      - orders
+      description: 'Permission: STAFF or ADMIN. '
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderEvent'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: ''
+        schema: *id001
+  /api/v1/dashboard:
+    get:
+      summary: Operational counts and first ten low-stock products
+      operationId: getApiV1Dashboard
+      tags:
+      - dashboard
+      description: 'Permission: STAFF or ADMIN. Low stock means active and available
+        <= reorderThreshold. List sorted by available, SKU and ID. Counts are operational,
+        not revenue.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '400':
+          description: Invalid input, unknown field or missing header
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Session authentication required
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Resource not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: Stock, state, uniqueness or idempotency conflict
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          description: Lock timeout/deadlock; retry unchanged with the same key
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                const: '1'
+              description: Retry after one second.
+      parameters: []
+  /login:
+    post:
+      summary: Spring Security form login
+      operationId: formLogin
+      security: []
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: false
+        description: Alternatively submit the _csrf form parameter.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                _csrf:
+                  type: string
+              required:
+              - username
+              - password
+      responses:
+        '302':
+          description: Success redirects to /; invalid credentials redirect to /login?error.
+            Session ID rotates on success; obtain a new CSRF token.
+          headers:
+            Location:
+              schema:
+                type: string
+        '403': &id007
+          description: Role denied or invalid/missing CSRF token
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+  /logout:
+    post:
+      summary: End the current session
+      operationId: logout
+      parameters:
+      - name: X-CSRF-TOKEN
+        in: header
+        required: true
+        description: ''
+        schema:
+          type: string
+      responses:
+        '302':
+          description: Session ended; redirects to /login?logout.
+        '403': *id007
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+  schemas:
+    Problem:
+      type: object
+      additionalProperties: true
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+          examples:
+          - INSUFFICIENT_STOCK
+          - INVALID_ORDER_TRANSITION
+          - PRODUCT_INACTIVE
+          - CUSTOMER_INACTIVE
+          - DUPLICATE_SKU
+          - IDEMPOTENCY_KEY_REUSED
+          - RETRYABLE_CONFLICT
+        detail:
+          type: string
+        instance:
+          type: string
+        requestId: *id001
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required:
+            - field
+            - message
+        shortages:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              productId: *id001
+              requested: &id008
+                type: integer
+                format: int64
+                minimum: 0
+              available: *id008
+            required:
+            - productId
+            - requested
+            - available
+      required:
+      - type
+      - title
+      - status
+      - code
+      - detail
+      - instance
+      - requestId
+    Csrf:
+      type: object
+      additionalProperties: false
+      properties:
+        headerName:
+          type: string
+          examples:
+          - X-CSRF-TOKEN
+        parameterName:
+          type: string
+          examples:
+          - _csrf
+        token:
+          type: string
+      required:
+      - headerName
+      - parameterName
+      - token
+    Actor:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        username:
+          type: string
+        role:
+          type: string
+          enum:
+          - ADMIN
+          - STAFF
+      required:
+      - id
+      - username
+      - role
+    CreateProduct:
+      type: object
+      additionalProperties: false
+      properties:
+        sku:
+          type: string
+          maxLength: 64
+          minLength: 1
+          pattern: ^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$
+        name:
+          type: string
+          maxLength: 200
+          minLength: 1
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        unitPrice: &id009
+          oneOf:
+          - type: string
+            pattern: ^\d{1,6}(\.\d{1,2})?$
+            examples:
+            - '12.50'
+          - type: number
+            minimum: 0
+            maximum: 999999.99
+            multipleOf: 0.01
+        reorderThreshold: *id008
+      required:
+      - sku
+      - name
+      - unitPrice
+      - reorderThreshold
+    ProductPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 1
+        description:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        unitPrice: *id009
+        reorderThreshold: *id008
+        active:
+          type: boolean
+      required: []
+      minProperties: 1
+    Product:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        unitPrice: &id012
+          type: string
+          pattern: ^\d+\.\d{2}$
+          examples:
+          - '12.50'
+        reorderThreshold: *id008
+        active:
+          type: boolean
+        onHand: *id008
+        reserved: *id008
+        available: *id008
+        createdAt: *id004
+        updatedAt: *id004
+      required:
+      - id
+      - sku
+      - name
+      - description
+      - unitPrice
+      - reorderThreshold
+      - active
+      - onHand
+      - reserved
+      - available
+      - createdAt
+      - updatedAt
+    CreateCustomer:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 1
+        email:
+          type:
+          - string
+          - 'null'
+          maxLength: 254
+          format: email
+        phone:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
+        notes:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+      required:
+      - name
+    CustomerPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          maxLength: 200
+          minLength: 1
+        email:
+          type:
+          - string
+          - 'null'
+          maxLength: 254
+          format: email
+        phone:
+          type:
+          - string
+          - 'null'
+          maxLength: 40
+        notes:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+        active:
+          type: boolean
+          description: Only ADMIN may submit this field, even if its value would not
+            change.
+      required: []
+      minProperties: 1
+    Customer:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        name:
+          type: string
+        email:
+          type:
+          - string
+          - 'null'
+        phone:
+          type:
+          - string
+          - 'null'
+        notes:
+          type:
+          - string
+          - 'null'
+        active:
+          type: boolean
+        createdAt: *id004
+        updatedAt: *id004
+      required:
+      - id
+      - name
+      - email
+      - phone
+      - notes
+      - active
+      - createdAt
+      - updatedAt
+    Receipt:
+      type: object
+      additionalProperties: false
+      properties:
+        productId: *id001
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 1000000
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 1
+      required:
+      - productId
+      - quantity
+      - reason
+    Adjustment:
+      type: object
+      additionalProperties: false
+      properties:
+        productId: *id001
+        delta:
+          type: integer
+          minimum: -1000000
+          maximum: 1000000
+          not:
+            const: 0
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 1
+      required:
+      - productId
+      - delta
+      - reason
+    Movement:
+      type: object
+      additionalProperties: false
+      properties:
+        movementId: *id001
+        productId: *id001
+        orderId:
+          type:
+          - string
+          - 'null'
+          format: uuid
+        actorId: *id001
+        type: *id010
+        deltaOnHand:
+          type: integer
+          format: int64
+        deltaReserved:
+          type: integer
+          format: int64
+        onHandAfter: *id008
+        reservedAfter: *id008
+        reason:
+          type: string
+        createdAt: *id004
+      required:
+      - movementId
+      - productId
+      - orderId
+      - actorId
+      - type
+      - deltaOnHand
+      - deltaReserved
+      - onHandAfter
+      - reservedAfter
+      - reason
+      - createdAt
+    CreateOrder:
+      type: object
+      additionalProperties: false
+      properties:
+        customerId: *id001
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Product IDs must be distinct. Lines are normalized into UUID
+            order before hashing.
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              productId: *id001
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 1000000
+            required:
+            - productId
+            - quantity
+        notes:
+          type:
+          - string
+          - 'null'
+          maxLength: 2000
+      required:
+      - customerId
+      - items
+    Cancel:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          minLength: 1
+      required:
+      - reason
+    EmptyCommand:
+      type: object
+      additionalProperties: false
+      properties: {}
+      required: []
+    Order:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        status: *id011
+        customer:
+          type: object
+          additionalProperties: false
+          properties:
+            id: *id001
+            name:
+              type: string
+            email:
+              type:
+              - string
+              - 'null'
+            phone:
+              type:
+              - string
+              - 'null'
+          required:
+          - id
+          - name
+          - email
+          - phone
+        items:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              productId: *id001
+              sku:
+                type: string
+              name:
+                type: string
+              quantity:
+                type: integer
+              unitPrice: *id012
+              lineTotal: *id012
+            required:
+            - productId
+            - sku
+            - name
+            - quantity
+            - unitPrice
+            - lineTotal
+        currency:
+          type: string
+          const: EUR
+        total: *id012
+        notes:
+          type:
+          - string
+          - 'null'
+        createdBy: *id001
+        createdAt: *id004
+        fulfilledAt: &id013
+          type:
+          - string
+          - 'null'
+          format: date-time
+        cancelledAt: *id013
+        cancellationReason:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - status
+      - customer
+      - items
+      - currency
+      - total
+      - notes
+      - createdBy
+      - createdAt
+      - fulfilledAt
+      - cancelledAt
+      - cancellationReason
+    OrderSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        status:
+          type: string
+          enum:
+          - CONFIRMED
+          - FULFILLED
+          - CANCELLED
+        customerId: *id001
+        customerName:
+          type: string
+        quantity: *id008
+        currency:
+          type: string
+          const: EUR
+        total: *id012
+        createdBy: *id001
+        createdAt: *id004
+        fulfilledAt: *id013
+        cancelledAt: *id013
+      required:
+      - id
+      - status
+      - customerId
+      - customerName
+      - quantity
+      - currency
+      - total
+      - createdBy
+      - createdAt
+      - fulfilledAt
+      - cancelledAt
+    OrderEvent:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        orderId: *id001
+        actorId: *id001
+        fromStatus:
+          type:
+          - string
+          - 'null'
+        toStatus:
+          type: string
+          enum:
+          - CONFIRMED
+          - FULFILLED
+          - CANCELLED
+        reason:
+          type:
+          - string
+          - 'null'
+        createdAt: *id004
+      required:
+      - id
+      - orderId
+      - actorId
+      - fromStatus
+      - toStatus
+      - reason
+      - createdAt
+    Dashboard:
+      type: object
+      additionalProperties: false
+      properties:
+        activeProductCount: *id008
+        confirmedOrderCount: *id008
+        lowStockProductCount: *id008
+        lowStock:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/Product'
+      required:
+      - activeProductCount
+      - confirmedOrderCount
+      - lowStockProductCount
+      - lowStock
+    ProductPage:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        page: *id008
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements: *id008
+        totalPages: *id008
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages
+    CustomerPage:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Customer'
+        page: *id008
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements: *id008
+        totalPages: *id008
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages
+    OrderSummaryPage:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        page: *id008
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements: *id008
+        totalPages: *id008
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages
+    MovementPage:
+      type: object
+      additionalProperties: false
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movement'
+        page: *id008
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        totalElements: *id008
+        totalPages: *id008
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+      - totalPages

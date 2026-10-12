@@ -1,3 +1,80 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments :: head}"></head><body><a class="skip-link" href="#main">Skip to content</a><aside th:replace="~{fragments :: nav}"></aside><div class="shell"><header th:replace="~{fragments :: top}"></header><main id="main"><div th:replace="~{fragments :: feedback}"></div><div class="page-heading"><div><p class="eyebrow">YOUR CONTACTS</p><h1><span th:text="${title}"></span></h1><p class="subheading">Historical orders keep their original customer details.</p></div></div>
-<form class="panel edit-form" data-kind="customer" th:attr="data-endpoint=${customer==null?'/api/v1/customers':'/api/v1/customers/'+customer.id()},data-method=${customer==null?'POST':'PATCH'},data-redirect='/customers'">
-<div class="form-grid"><label class="wide">Customer name<input name="name" required maxlength="200" th:value="${customer?.name()}"><span class="field-error" data-field="name"></span></label><label>Email<input name="email" type="email" maxlength="254" th:value="${customer?.email()}"><span class="field-error" data-field="email"></span></label><label>Phone<input name="phone" maxlength="40" th:value="${customer?.phone()}"><span class="field-error" data-field="phone"></span></label><label class="wide">Notes<textarea name="notes" rows="4" maxlength="2000" th:text="${customer?.notes()}"></textarea><span class="field-error" data-field="notes"></span></label><label th:if="${customer!=null and actor.admin()}">Status<select name="active"><option value="true" th:selected="${customer.active()}">Active</option><option value="false" th:selected="${!customer.active()}">Archived</option></select></label></div><div class="form-actions"><a href="/customers" class="button secondary">Back to customers</a><button class="button">Save customer</button></div></form><footer>StockFlow <span>Inventory in balance.</span></footer></main></div></body></html>
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="~{fragments :: head}"></head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <aside th:replace="~{fragments :: nav}"></aside>
+    <div class="shell">
+      <header th:replace="~{fragments :: top}"></header>
+      <main id="main">
+        <div th:replace="~{fragments :: feedback}"></div>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">YOUR CONTACTS</p>
+            <h1><span th:text="${title}"></span></h1>
+            <p class="subheading">
+              Historical orders keep their original customer details.
+            </p>
+          </div>
+        </div>
+        <form
+          class="panel edit-form"
+          data-kind="customer"
+          th:attr="data-endpoint=${customer==null?'/api/v1/customers':'/api/v1/customers/'+customer.id()},data-method=${customer==null?'POST':'PATCH'},data-redirect='/customers'"
+        >
+          <div class="form-grid">
+            <label class="wide"
+              >Customer name<input
+                name="name"
+                required
+                maxlength="200"
+                th:value="${customer?.name()}" /><span
+                class="field-error"
+                data-field="name"
+              ></span></label
+            ><label
+              >Email<input
+                name="email"
+                type="email"
+                maxlength="254"
+                th:value="${customer?.email()}" /><span
+                class="field-error"
+                data-field="email"
+              ></span></label
+            ><label
+              >Phone<input
+                name="phone"
+                maxlength="40"
+                th:value="${customer?.phone()}" /><span
+                class="field-error"
+                data-field="phone"
+              ></span></label
+            ><label class="wide"
+              >Notes<textarea
+                name="notes"
+                rows="4"
+                maxlength="2000"
+                th:text="${customer?.notes()}"
+              ></textarea
+              ><span class="field-error" data-field="notes"></span></label
+            ><label th:if="${customer!=null and actor.admin()}"
+              >Status<select name="active">
+                <option value="true" th:selected="${customer.active()}">
+                  Active
+                </option>
+                <option value="false" th:selected="${!customer.active()}">
+                  Archived
+                </option>
+              </select></label
+            >
+          </div>
+          <div class="form-actions">
+            <a href="/customers" class="button secondary">Back to customers</a
+            ><button class="button">Save customer</button>
+          </div>
+        </form>
+        <footer>StockFlow <span>Inventory in balance.</span></footer>
+      </main>
+    </div>
+  </body>
+</html>

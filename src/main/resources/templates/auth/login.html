@@ -1,1 +1,59 @@
-<!DOCTYPE html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Sign in · StockFlow</title><link rel="stylesheet" href="/css/app.css"></head><body class="login-page"><section class="login-story"><a class="brand" href="/"><span class="brand-mark">▤</span> StockFlow<span class="brand-dot">.</span></a><div><p class="eyebrow">LESS GUESSWORK. MORE FLOW.</p><h1>Your stock.<br>Your orders.<br>In balance.</h1><p>A calm workspace for keeping inventory moving<br>and every order accounted for.</p><div class="stock-art" aria-hidden="true"><div>RECEIVE <span>＋ 10</span></div><div>RESERVE <span>− 3</span></div><div>AVAILABLE <strong>7</strong></div></div></div><small>One warehouse. One reliable view.</small></section><main class="login-main"><form th:action="@{/login}" method="post" class="login-form"><p class="eyebrow">WELCOME BACK</p><h2>Sign in to your workspace</h2><p class="muted">Use your administrator or staff account.</p><div class="notice error" th:if="${param.error!=null}" role="alert">The username or password was not recognised.</div><div class="notice success" th:if="${param.logout!=null}">You have signed out.</div><label>Username<input name="username" required autocomplete="username" autofocus></label><label>Password<input name="password" type="password" required autocomplete="current-password"></label><button class="button full">Sign in →</button><p class="muted small">Internal team access · StockFlow</p></form></main></body></html>
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · StockFlow</title>
+    <link rel="stylesheet" href="/css/app.css" />
+  </head>
+  <body class="login-page">
+    <section class="login-story">
+      <a class="brand" href="/"
+        ><span class="brand-mark">▤</span> StockFlow<span class="brand-dot"
+          >.</span
+        ></a
+      >
+      <div>
+        <p class="eyebrow">LESS GUESSWORK. MORE FLOW.</p>
+        <h1>Your stock.<br />Your orders.<br />In balance.</h1>
+        <p>
+          A calm workspace for keeping inventory moving<br />and every order
+          accounted for.
+        </p>
+        <div class="stock-art" aria-hidden="true">
+          <div>RECEIVE <span>＋ 10</span></div>
+          <div>RESERVE <span>− 3</span></div>
+          <div>AVAILABLE <strong>7</strong></div>
+        </div>
+      </div>
+      <small>One warehouse. One reliable view.</small>
+    </section>
+    <main class="login-main">
+      <form th:action="@{/login}" method="post" class="login-form">
+        <p class="eyebrow">WELCOME BACK</p>
+        <h2>Sign in to your workspace</h2>
+        <p class="muted">Use your administrator or staff account.</p>
+        <div class="notice error" th:if="${param.error!=null}" role="alert">
+          The username or password was not recognised.
+        </div>
+        <div class="notice success" th:if="${param.logout!=null}">
+          You have signed out.
+        </div>
+        <label
+          >Username<input
+            name="username"
+            required
+            autocomplete="username"
+            autofocus /></label
+        ><label
+          >Password<input
+            name="password"
+            type="password"
+            required
+            autocomplete="current-password" /></label
+        ><button class="button full">Sign in →</button>
+        <p class="muted small">Internal team access · StockFlow</p>
+      </form>
+    </main>
+  </body>
+</html>

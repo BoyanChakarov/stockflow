@@ -676,6 +676,80 @@ class StockFlowIT extends DatabaseIT {
   }
 
   @Test
+  void concurrentAdjustmentReplaysOnceAndOperationScopesAreIndependent() throws Exception {
+    UUID key = UUID.randomUUID();
+    inventory.receive(new InventoryDtos.Receive(product, 10, "Opening"), key);
+    var request = new InventoryDtos.Adjust(product, -2, "Count correction");
+    var results = race(() -> inventory.adjust(request, key), () -> inventory.adjust(request, key));
+    assertThat(json.readTree(((StoredResponse) results.get(0)).body()))
+        .isEqualTo(json.readTree(((StoredResponse) results.get(1)).body()));
+    assertThat(products.get(product).onHand()).isEqualTo(8);
+    assertThat(count("stock_movements")).isEqualTo(2);
+    conflict(
+        () -> inventory.adjust(new InventoryDtos.Adjust(product, -1, "Count correction"), key),
+        "IDEMPOTENCY_KEY_REUSED");
+    conflict(
+        () -> inventory.receive(new InventoryDtos.Receive(product, 11, "Opening"), key),
+        "IDEMPOTENCY_KEY_REUSED");
+  }
+
+  @Test
+  void malformedAndForbiddenCommandFieldsNeverMutate() throws Exception {
+    stock(product, 10);
+    var order = create(1);
+    mvc.perform(
+            post("/api/v1/orders/" + order.id() + "/fulfil")
+                .with(user("staff").roles("STAFF"))
+                .with(csrf())
+                .contentType("application/json")
+                .content("{\"status\":\"CANCELLED\"}"))
+        .andExpect(status().isBadRequest());
+    mvc.perform(
+            post("/api/v1/orders")
+                .with(user("staff").roles("STAFF"))
+                .with(csrf())
+                .header("Idempotency-Key", UUID.randomUUID())
+                .contentType("application/json")
+                .content(
+                    "{\"customerId\":\""
+                        + customer
+                        + "\",\"items\":[{\"productId\":\""
+                        + product
+                        + "\",\"quantity\":1.5}]}"))
+        .andExpect(status().isBadRequest());
+    mvc.perform(get("/api/v1/nonexistent").with(user("staff").roles("STAFF")))
+        .andExpect(status().isNotFound());
+    as("admin");
+    assertThat(orders.get(order.id()).status()).isEqualTo(OrderStatus.CONFIRMED);
+    assertThat(count("orders")).isEqualTo(1);
+  }
+
+  @Test
+  void zeroPriceIsAllowedAndOutOfBoundsPricesAreRejected() throws Exception {
+    var free =
+        products.create(new ProductDtos.Create("FREE", "Sample", null, new BigDecimal("0.00"), 0L));
+    stock(free.id(), 1);
+    var order =
+        json.readValue(
+            orders
+                .create(
+                    new OrderDtos.Create(customer, List.of(new OrderDtos.Item(free.id(), 1)), null),
+                    UUID.randomUUID())
+                .body(),
+            OrderDtos.Detail.class);
+    assertThat(order.total()).isEqualTo("0.00");
+    for (String price : List.of("-0.01", "1000000.00", "1.001")) {
+      mvc.perform(
+              patch("/api/v1/products/" + product)
+                  .with(user("admin").roles("ADMIN"))
+                  .with(csrf())
+                  .contentType("application/json")
+                  .content("{\"unitPrice\":\"" + price + "\"}"))
+          .andExpect(status().isBadRequest());
+    }
+  }
+
+  @Test
   void stockLockTimeoutIsRetryableAndLeavesNoClaim() throws Exception {
     stock(product, 10);
     var locked = new CountDownLatch(1);

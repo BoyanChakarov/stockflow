@@ -7,3 +7,6 @@ target/
 *.iml
 .DS_Store
 .vscode/
+node_modules/
+__pycache__/
+*.pyc

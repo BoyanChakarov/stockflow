@@ -74,7 +74,10 @@ public class ApiErrors {
     } else if (error instanceof org.springframework.web.ErrorResponse response) {
       status = response.getStatusCode().value();
       code = status == 404 ? "NOT_FOUND" : "INVALID_REQUEST";
-      detail = status == 404 ? "The requested resource was not found." : "The HTTP method or request format is not supported.";
+      detail =
+          status == 404
+              ? "The requested resource was not found."
+              : "The HTTP method or request format is not supported.";
     }
     for (Throwable e = error; e != null; e = e.getCause())
       if (e instanceof java.sql.SQLException sql) {
