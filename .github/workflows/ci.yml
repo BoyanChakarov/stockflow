@@ -44,6 +44,11 @@ jobs:
           path: |
             target/browser-screenshots
             target/browser-result.json
+      - name: Verified application JAR
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: stockflow-application
+          path: target/stockflow.jar
       - name: Compose diagnostics
         if: failure()
         run: docker compose logs --no-color

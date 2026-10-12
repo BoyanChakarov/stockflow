@@ -57,6 +57,27 @@ async function confirmOrder() {
 }
 try {
   await login("admin");
+  const invalidPage = await page.goto("http://localhost:8080/products?size=101");
+  assert.equal(invalidPage.status(), 400);
+  await page.getByRole("link", { name: "Back to overview" }).waitFor();
+  await page.goto("http://localhost:8080/products/new");
+  await page.getByLabel("SKU", { exact: false }).fill("BROWSER-TEST");
+  await page.getByLabel("Product name", { exact: true }).fill("Browser catalogue item");
+  await page.getByLabel("Unit price (EUR)", { exact: true }).fill("9.95");
+  await page.getByRole("button", { name: "Save product" }).click();
+  await page.waitForURL(/products\?saved=true/);
+  await page.getByRole("link", { name: "Browser catalogue item", exact: false }).click();
+  await page.getByRole("link", { name: "Edit product", exact: true }).click();
+  await page.getByLabel("Description", { exact: true }).fill("Created and edited through the admin browser workflow");
+  await page.getByRole("button", { name: "Save product" }).click();
+  await page.waitForURL(/products\?saved=true/);
+  await page.getByRole("link", { name: "Browser catalogue item", exact: false }).click();
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Archive product", exact: true }).click();
+  await page.getByRole("button", { name: "Reactivate product", exact: true }).waitFor();
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Reactivate product", exact: true }).click();
+  await page.getByRole("button", { name: "Archive product", exact: true }).waitFor();
   await page.goto("http://localhost:8080/products/" + product);
   const receipt = page.locator('form[data-kind="receipt"]');
   await receipt.getByLabel("Quantity", { exact: true }).fill("10");
