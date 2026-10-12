@@ -1,10 +1,18 @@
 package com.boyanchakarov.stockflow;
+
 import java.time.Clock;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+
 @SpringBootApplication
 public class StockFlowApplication {
-    public static void main(String[] args) { SpringApplication.run(StockFlowApplication.class, args); }
-    @Bean Clock clock() { return Clock.systemUTC(); }
+  public static void main(String[] args) {
+    SpringApplication.run(StockFlowApplication.class, args);
+  }
+
+  @Bean
+  Clock clock() {
+    return Clock.tick(Clock.systemUTC(), java.time.Duration.ofNanos(1000));
+  }
 }
