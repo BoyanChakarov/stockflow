@@ -8,8 +8,7 @@ StockFlow manages products, customers, inventory, and orders for a small interna
 
 Built with **Java 21, Spring Boot, Spring Security, Spring Data JPA, and PostgreSQL**, with a working Thymeleaf interface and a reproducible Docker demo. One warehouse, whole units, EUR quoted totals; all demonstration records are synthetic.
 
-[Run locally](#quick-start) · [Demo walkthrough](docs/demo.md) · [Architecture](docs/architecture.md) · [Verified release](https://github.com/BoyanChakarov/stockflow/releases/tag/v1.0.0) · [CV wording](docs/portfolio.md)
-
+[Run locally](#quick-start) · [Demo walkthrough](docs/demo.md) · [Architecture](docs/architecture.md) ·
 ## Engineering highlights
 
 - **Transactional order processing:** reservations, order snapshots, stock movements, and events commit together. A shortage on any line rolls back the entire order.
